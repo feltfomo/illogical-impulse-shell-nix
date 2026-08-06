@@ -212,7 +212,16 @@ stdenvNoCC.mkDerivation {
     output_path = '$colors_path'
     EOF_MATUGEN
 
-    XDG_CONFIG_HOME="$matugen_home" exec ${lib.getExe matugen} "$@"
+    XDG_CONFIG_HOME="$matugen_home" ${lib.getExe matugen} "$@"
+
+    # Optional user templates use the shell's namespaced Matugen interface.
+    # A declarative manager may publish this file; standalone installs simply
+    # keep using the built-in colors template above.
+    config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
+    user_templates_config="$config_home/illogical-impulse/matugen/config.toml"
+    if [[ -s "$user_templates_config" ]]; then
+      ${lib.getExe matugen} "$@" --config "$user_templates_config"
+    fi
     EOF_THEME_COMMAND
 
     cat > "$out/bin/illogical-impulse-shell-ipc" <<'EOF_IPC'
