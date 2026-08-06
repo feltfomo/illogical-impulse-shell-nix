@@ -1,6 +1,7 @@
 {
   lib,
   stdenvNoCC,
+  patch,
   roundedPolygon,
   upstream,
 }:
@@ -10,10 +11,11 @@ stdenvNoCC.mkDerivation {
 
   src = upstream;
 
+  nativeBuildInputs = [ patch ];
+
   dontConfigure = true;
   dontBuild = true;
-  # Preserve the upstream shell and assemble its pinned shapes submodule.
-  # Runtime packaging patches interpreters deliberately in a separate layer.
+  # compatibility.patch carries qml fixes against upstream aed4d1ec
   dontFixup = true;
 
   installPhase = ''
@@ -25,8 +27,7 @@ stdenvNoCC.mkDerivation {
     mkdir -p "$out/share/quickshell"
     cp -a "$shell_source" "$out/share/quickshell/ii"
 
-    # GitHub archive inputs leave gitlinks empty. Populate the exact submodule
-    # revision recorded by the pinned dots-hyprland commit.
+    # the aed4d1ec archive omitted the e31ec4cb shapes gitlink contents
     chmod -R u+w "$out/share/quickshell/ii"
     shapes_target="$out/share/quickshell/ii/modules/common/widgets/shapes"
     rm -rf "$shapes_target"
@@ -34,6 +35,11 @@ stdenvNoCC.mkDerivation {
 
     test -f "$shapes_target/ShapeCanvas.qml"
     test -f "$shapes_target/material-shapes.js"
+
+    {
+      sed '/^# /d' ${./compatibility.patch}
+      printf '\n'
+    } | patch -d "$out/share/quickshell/ii" -p1
 
     runHook postInstall
   '';

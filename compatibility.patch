@@ -1,0 +1,84 @@
+# fixes qml property mismatches and null dereferences in upstream aed4d1ec
+# recheck every hunk when the upstream pin moves
+
+diff --git a/modules/ii/notificationPopup/NotificationPopup.qml b/modules/ii/notificationPopup/NotificationPopup.qml
+--- a/modules/ii/notificationPopup/NotificationPopup.qml
++++ b/modules/ii/notificationPopup/NotificationPopup.qml
+@@ -14,7 +14,7 @@ Scope {
+     PanelWindow {
+         id: root
+         visible: (Notifications.popupList.length > 0) && !GlobalStates.screenLocked
+-        screen: Quickshell.screens.find(s => Config.options.notifications.forceMonitor.enable ? s.name === Config.options.notifications.forceMonitor.name : s.name === Hyprland.focusedMonitor?.name) ?? null
++        screen: Quickshell.screens.find(s => Config.options.notifications.monitor.enable ? s.name === Config.options.notifications.monitor.name : s.name === Hyprland.focusedMonitor?.name) ?? null
+ 
+         WlrLayershell.namespace: "quickshell:notificationPopup"
+         WlrLayershell.layer: WlrLayer.Overlay
+diff --git a/modules/ii/bar/BarContent.qml b/modules/ii/bar/BarContent.qml
+--- a/modules/ii/bar/BarContent.qml
++++ b/modules/ii/bar/BarContent.qml
+@@ -131,7 +131,6 @@ Item { // Bar content region
+         BarGroup {
+             id: middleCenterGroup
+             anchors.verticalCenter: parent.verticalCenter
+-            padding: workspacesWidget.widgetPadding
+ 
+             Workspaces {
+                 id: workspacesWidget
+diff --git a/modules/common/widgets/ToolbarTabBar.qml b/modules/common/widgets/ToolbarTabBar.qml
+--- a/modules/common/widgets/ToolbarTabBar.qml
++++ b/modules/common/widgets/ToolbarTabBar.qml
+@@ -56,18 +56,18 @@ Item {
+         implicitHeight: contentItem.children[root.currentIndex]?.implicitHeight ?? 0
+         radius: height / 2
+         // Animation
+-        property Item targetItem: contentItem.children[root.currentIndex]
++        property Item targetItem: contentItem.children[root.currentIndex] ?? null
+         AnimatedTabIndexPair {
+             id: leftBound
+             idx1Duration: 50
+             idx2Duration: 200
+-            index: activeIndicator.targetItem.x
++            index: activeIndicator.targetItem?.x ?? 0
+         }
+         AnimatedTabIndexPair {
+             id: rightBound
+             idx1Duration: 50
+             idx2Duration: 200
+-            index: activeIndicator.targetItem.x + activeIndicator.targetItem.width
++            index: (activeIndicator.targetItem?.x ?? 0) + (activeIndicator.targetItem?.width ?? 0)
+         }
+         x: Math.min(leftBound.idx1, leftBound.idx2)
+         width: Math.max(rightBound.idx1, rightBound.idx2) - x
+diff --git a/modules/settings/InterfaceConfig.qml b/modules/settings/InterfaceConfig.qml
+--- a/modules/settings/InterfaceConfig.qml
++++ b/modules/settings/InterfaceConfig.qml
+@@ -269,24 +269,24 @@ ContentPage {
+         ConfigSwitch {
+             buttonIcon: "monitor"
+             text: Translation.tr("Force specific monitor")
+-            checked: Config.options.notifications.forceMonitor.enable
++            checked: Config.options.notifications.monitor.enable
+             onCheckedChanged: {
+-                Config.options.notifications.forceMonitor.enable = checked;
++                Config.options.notifications.monitor.enable = checked;
+             }
+             StyledToolTip {
+                 text: Translation.tr("If you have multiple monitors and want notifications to only show on one of them, enable this and enter the monitor name below (e.g., eDP-1)")
+             }
+         }
+ 
+         ConfigRow {
+-            enabled: Config.options.notifications.forceMonitor.enable
++            enabled: Config.options.notifications.monitor.enable
+             MaterialTextArea {
+                 Layout.fillWidth: true
+                 placeholderText: Translation.tr("Monitor name to show notifications on (e.g., eDP-1)")
+-                text: Config.options.notifications.forceMonitor.name
++                text: Config.options.notifications.monitor.name
+                 wrapMode: TextEdit.Wrap
+                 onTextChanged: {
+-                    Config.options.notifications.forceMonitor.name = text;
++                    Config.options.notifications.monitor.name = text;
+                 }
+             }
+         }

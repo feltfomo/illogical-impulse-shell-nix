@@ -29,6 +29,7 @@
   quickshell,
   shellFonts,
   shellSource,
+  shellTheme,
   slurp,
   util-linux,
   wget,
@@ -74,8 +75,8 @@ let
   };
 
   qmlInputs = [
-    # The public Kirigami package is an empty propagation wrapper. Include its
-    # real QML payload and desktop style explicitly in the launcher closure.
+    # nixpkgs e72e4f299401 exposed kirigami through a propagation wrapper
+    # the qml payload stayed in kirigami.unwrapped
     kdePackages.kirigami
     kdePackages.kirigami.unwrapped
     kdePackages.qqc2-desktop-style
@@ -99,8 +100,7 @@ let
     qt6.qtwayland
   ];
 
-  # The Qt wrapper hook does not discover every QML-only module from a shell
-  # launcher, so expose their import roots explicitly as well.
+  # nixpkgs e72e4f299401 wrapQtAppsHook missed qml-only modules for this launcher
   qmlImportPath = lib.makeSearchPath "lib/qt-6/qml" qmlInputs;
 in
 stdenvNoCC.mkDerivation {
@@ -129,13 +129,20 @@ stdenvNoCC.mkDerivation {
     config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
     config_root="$config_home/quickshell"
     config_path="$config_root/ii"
+    translations_dir="$config_home/illogical-impulse/translations"
     state_home="''${XDG_STATE_HOME:-$HOME/.local/state}"
+    generated_dir="$state_home/quickshell/user/generated"
+    wallpaper_state_dir="$generated_dir/wallpaper"
+    colors_path="$generated_dir/colors.json"
 
-    mkdir -p "$config_root" "$state_home/quickshell/user"
+    mkdir -p "$config_root" "$translations_dir" "$wallpaper_state_dir"
 
-    # Quickshell's synthetic `qs.*` module namespace is generated for named
-    # configurations. Keep the immutable source in the store and expose it as
-    # the upstream `ii` configuration rather than launching shell.qml by path.
+    # upstream aed4d1ec Translation.qml read the optional overlay before it existed
+    if [[ ! -e "$translations_dir/en_US.json" ]]; then
+      printf '%s\n' '{}' > "$translations_dir/en_US.json"
+    fi
+
+    # quickshell 7511545 generated qs imports only for named configurations
     if [[ -L "$config_path" ]]; then
       ln -sfn ${shellSource}/share/quickshell/ii "$config_path"
     elif [[ -e "$config_path" ]]; then
@@ -145,8 +152,32 @@ stdenvNoCC.mkDerivation {
       ln -s ${shellSource}/share/quickshell/ii "$config_path"
     fi
 
-    # Keep the first packaging launch from starting upstream's wallpaper/theme
-    # bootstrap before those external resources have been packaged.
+    # the host renderer owns every matugen output except colors.json
+    if [[ ! -s "$colors_path" ]]; then
+      bootstrap_home="$state_home/quickshell/matugen-bootstrap"
+      mkdir -p "$bootstrap_home/matugen"
+      cat > "$bootstrap_home/matugen/config.toml" <<EOF_THEME
+    [config]
+    version_check = false
+
+    [templates.m3colors]
+    input_path = '${shellTheme}/share/illogical-impulse-shell/matugen/colors.json'
+    output_path = '$colors_path'
+    EOF_THEME
+
+      XDG_CONFIG_HOME="$bootstrap_home" ${lib.getExe matugen} \
+        --source-color-index 0 \
+        color hex '#6750A4' \
+        --mode dark \
+        --type scheme-tonal-spot \
+        >/dev/null
+    fi
+
+    if [[ ! -e "$wallpaper_state_dir/category.txt" ]]; then
+      printf '%s\n' 'unknown' > "$wallpaper_state_dir/category.txt"
+    fi
+
+    # upstream aed4d1ec first-run code launched the unrestricted wallpaper bootstrap
     if [[ ! -e "$state_home/quickshell/user/first_run.txt" ]]; then
       printf '%s\n' 'Initialized by the Nix launcher' > "$state_home/quickshell/user/first_run.txt"
     fi
@@ -158,7 +189,17 @@ stdenvNoCC.mkDerivation {
     export QML_IMPORT_PATH=${qmlImportPath}:"''${QML_IMPORT_PATH:-}"
     exec ${lib.getExe quickshell} -c ii "$@"
     EOF
-    chmod +x "$out/bin/illogical-impulse-shell"
+
+    cat > "$out/bin/illogical-impulse-shell-ipc" <<'EOF_IPC'
+    #!${bash}/bin/bash
+    set -euo pipefail
+
+    exec ${lib.getExe quickshell} -c ii ipc call "$@"
+    EOF_IPC
+
+    chmod +x \
+      "$out/bin/illogical-impulse-shell" \
+      "$out/bin/illogical-impulse-shell-ipc"
 
     runHook postInstall
   '';

@@ -41,8 +41,9 @@
       shellSource = pkgs.callPackage ./source.nix {
         inherit roundedPolygon upstream;
       };
+      shellTheme = pkgs.callPackage ./theme.nix { inherit upstream; };
       runnableShell = pkgs.callPackage ./package.nix {
-        inherit shellFonts shellSource;
+        inherit shellFonts shellSource shellTheme;
         quickshell = quickshell.packages.${system}.default;
       };
     in
@@ -52,11 +53,13 @@
         fonts = shellFonts;
         runtime = runnableShell;
         source = shellSource;
+        theme = shellTheme;
       };
 
       checks.${system} = {
         extracted-shell = shellSource;
         packaged-fonts = shellFonts;
+        packaged-theme = shellTheme;
         runnable-shell = runnableShell;
       };
 
