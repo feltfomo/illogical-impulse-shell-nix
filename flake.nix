@@ -19,6 +19,11 @@
       flake = false;
     };
 
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     upstream = {
       url = "github:end-4/dots-hyprland";
       flake = false;
@@ -31,19 +36,28 @@
       nixpkgs,
       quickshell,
       roundedPolygon,
+      self,
+      treefmt-nix,
       upstream,
       ...
     }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
+      treefmtEval = treefmt-nix.lib.evalModule pkgs ./formatter.nix;
       shellFonts = pkgs.callPackage ./fonts.nix { inherit googleSansFlex; };
+      shellPython = pkgs.callPackage ./python.nix { };
       shellSource = pkgs.callPackage ./source.nix {
         inherit roundedPolygon upstream;
       };
       shellTheme = pkgs.callPackage ./theme.nix { inherit upstream; };
       runnableShell = pkgs.callPackage ./package.nix {
-        inherit shellFonts shellSource shellTheme;
+        inherit
+          shellFonts
+          shellPython
+          shellSource
+          shellTheme
+          ;
         quickshell = quickshell.packages.${system}.default;
       };
     in
@@ -51,18 +65,21 @@
       packages.${system} = {
         default = runnableShell;
         fonts = shellFonts;
+        python = shellPython;
         runtime = runnableShell;
         source = shellSource;
         theme = shellTheme;
       };
 
       checks.${system} = {
+        formatting = treefmtEval.config.build.check self;
         extracted-shell = shellSource;
         packaged-fonts = shellFonts;
+        packaged-python = shellPython;
         packaged-theme = shellTheme;
         runnable-shell = runnableShell;
       };
 
-      formatter.${system} = pkgs.nixfmt-rfc-style;
+      formatter.${system} = treefmtEval.config.build.wrapper;
     };
 }

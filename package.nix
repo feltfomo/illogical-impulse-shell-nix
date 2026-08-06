@@ -19,6 +19,7 @@
   imagemagick,
   jq,
   kdePackages,
+  libqalculate,
   libnotify,
   libsecret,
   makeFontsConf,
@@ -28,13 +29,17 @@
   qt6,
   quickshell,
   shellFonts,
+  shellPython,
   shellSource,
   shellTheme,
   slurp,
+  tesseract,
   util-linux,
   wget,
   wl-clipboard,
+  xdg-utils,
   xdg-user-dirs,
+  ydotool,
 }:
 let
   runtimeInputs = [
@@ -53,16 +58,21 @@ let
     hyprsunset
     imagemagick
     jq
+    libqalculate
     libnotify
     libsecret
     matugen
     playerctl
     procps
+    shellPython
     slurp
+    tesseract
     util-linux
     wget
     wl-clipboard
+    xdg-utils
     xdg-user-dirs
+    ydotool
   ];
 
   iconInputs = [
@@ -116,7 +126,9 @@ stdenvNoCC.mkDerivation {
   buildInputs = [
     quickshell
     gsettings-desktop-schemas
-  ] ++ iconInputs ++ qmlInputs;
+  ]
+  ++ iconInputs
+  ++ qmlInputs;
 
   installPhase = ''
     runHook preInstall
@@ -135,6 +147,8 @@ stdenvNoCC.mkDerivation {
     wallpaper_state_dir="$generated_dir/wallpaper"
     colors_path="$generated_dir/colors.json"
 
+    export PATH="$(dirname "$0")":${lib.makeBinPath runtimeInputs}:"$PATH"
+
     mkdir -p "$config_root" "$translations_dir" "$wallpaper_state_dir"
 
     # upstream aed4d1ec Translation.qml read the optional overlay before it existed
@@ -152,20 +166,9 @@ stdenvNoCC.mkDerivation {
       ln -s ${shellSource}/share/quickshell/ii "$config_path"
     fi
 
-    # the host renderer owns every matugen output except colors.json
+    # this package only writes the shell colors.json output
     if [[ ! -s "$colors_path" ]]; then
-      bootstrap_home="$state_home/quickshell/matugen-bootstrap"
-      mkdir -p "$bootstrap_home/matugen"
-      cat > "$bootstrap_home/matugen/config.toml" <<EOF_THEME
-    [config]
-    version_check = false
-
-    [templates.m3colors]
-    input_path = '${shellTheme}/share/illogical-impulse-shell/matugen/colors.json'
-    output_path = '$colors_path'
-    EOF_THEME
-
-      XDG_CONFIG_HOME="$bootstrap_home" ${lib.getExe matugen} \
+      illogical-impulse-shell-theme \
         --source-color-index 0 \
         color hex '#6750A4' \
         --mode dark \
@@ -182,13 +185,35 @@ stdenvNoCC.mkDerivation {
       printf '%s\n' 'Initialized by the Nix launcher' > "$state_home/quickshell/user/first_run.txt"
     fi
 
-    export PATH=${lib.makeBinPath runtimeInputs}:"$PATH"
+    export ILLOGICAL_IMPULSE_VIRTUAL_ENV=${shellPython}
     export FONTCONFIG_FILE=${fontConfig}
     export XDG_DATA_DIRS=${lib.makeSearchPath "share" iconInputs}:"''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
     export QML2_IMPORT_PATH=${qmlImportPath}:"''${QML2_IMPORT_PATH:-}"
     export QML_IMPORT_PATH=${qmlImportPath}:"''${QML_IMPORT_PATH:-}"
     exec ${lib.getExe quickshell} -c ii "$@"
     EOF
+
+    cat > "$out/bin/illogical-impulse-shell-theme" <<'EOF_THEME_COMMAND'
+    #!${bash}/bin/bash
+    set -euo pipefail
+
+    state_home="''${XDG_STATE_HOME:-$HOME/.local/state}"
+    generated_dir="$state_home/quickshell/user/generated"
+    colors_path="$generated_dir/colors.json"
+    matugen_home="$state_home/quickshell/matugen-shell"
+
+    mkdir -p "$generated_dir" "$matugen_home/matugen"
+    cat > "$matugen_home/matugen/config.toml" <<EOF_MATUGEN
+    [config]
+    version_check = false
+
+    [templates.m3colors]
+    input_path = '${shellTheme}/share/illogical-impulse-shell/matugen/colors.json'
+    output_path = '$colors_path'
+    EOF_MATUGEN
+
+    XDG_CONFIG_HOME="$matugen_home" exec ${lib.getExe matugen} "$@"
+    EOF_THEME_COMMAND
 
     cat > "$out/bin/illogical-impulse-shell-ipc" <<'EOF_IPC'
     #!${bash}/bin/bash
@@ -199,7 +224,8 @@ stdenvNoCC.mkDerivation {
 
     chmod +x \
       "$out/bin/illogical-impulse-shell" \
-      "$out/bin/illogical-impulse-shell-ipc"
+      "$out/bin/illogical-impulse-shell-ipc" \
+      "$out/bin/illogical-impulse-shell-theme"
 
     runHook postInstall
   '';

@@ -1,4 +1,4 @@
-# fixes qml property mismatches and null dereferences in upstream aed4d1ec
+# fixes qml property mismatches, region actions, and null dereferences in upstream aed4d1ec
 # recheck every hunk when the upstream pin moves
 
 diff --git a/modules/ii/notificationPopup/NotificationPopup.qml b/modules/ii/notificationPopup/NotificationPopup.qml
@@ -82,3 +82,139 @@ diff --git a/modules/settings/InterfaceConfig.qml b/modules/settings/InterfaceCo
                  }
              }
          }
+diff --git a/modules/ii/regionSelector/RegionSelection.qml b/modules/ii/regionSelector/RegionSelection.qml
+--- a/modules/ii/regionSelector/RegionSelection.qml
++++ b/modules/ii/regionSelector/RegionSelection.qml
+@@ -226,10 +226,20 @@ PanelWindow {
+         stdout: StdioCollector {
+             id: imageDimensionCollector
+             onStreamFinished: {
+-                imageRegions = RegionFunctions.filterImageRegions(
+-                    JSON.parse(imageDimensionCollector.text),
+-                    root.windowRegions
+-                );
++                const output = imageDimensionCollector.text.trim();
++                if (output.length === 0) {
++                    imageRegions = [];
++                    return;
++                }
++                try {
++                    imageRegions = RegionFunctions.filterImageRegions(
++                        JSON.parse(output),
++                        root.windowRegions
++                    );
++                } catch (error) {
++                    console.warn(`[Region Selector] Invalid content-region output: ${error}`);
++                    imageRegions = [];
++                }
+             }
+         }
+     }
+diff --git a/modules/ii/regionSelector/OptionsToolbar.qml b/modules/ii/regionSelector/OptionsToolbar.qml
+--- a/modules/ii/regionSelector/OptionsToolbar.qml
++++ b/modules/ii/regionSelector/OptionsToolbar.qml
+@@ -31,7 +31,22 @@ Toolbar {
+         ]
+-        currentIndex: root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
++        function syncFromSelectionMode() {
++            const nextIndex = root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1;
++            if (currentIndex !== nextIndex) {
++                setCurrentIndex(nextIndex);
++            }
++        }
++        Component.onCompleted: syncFromSelectionMode()
++        Connections {
++            target: root
++            function onSelectionModeChanged() {
++                tabBar.syncFromSelectionMode();
++            }
++        }
+         onCurrentIndexChanged: {
+-            root.selectionMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle;
++            const nextSelectionMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle;
++            if (root.selectionMode !== nextSelectionMode) {
++                root.selectionMode = nextSelectionMode;
++            }
+         }
+     }
+ }
+diff --git a/modules/common/widgets/Revealer.qml b/modules/common/widgets/Revealer.qml
+--- a/modules/common/widgets/Revealer.qml
++++ b/modules/common/widgets/Revealer.qml
+@@ -13,2 +13,2 @@ Item {
+-    implicitWidth: (reveal || vertical) ? childrenRect.width : 0
+-    implicitHeight: (reveal || !vertical) ? childrenRect.height : 0
++    implicitWidth: (reveal || vertical) && children.length > 0 ? children[0].implicitWidth : 0
++    implicitHeight: (reveal || !vertical) && children.length > 0 ? children[0].implicitHeight : 0
+diff --git a/modules/common/widgets/ToolbarPairedFab.qml b/modules/common/widgets/ToolbarPairedFab.qml
+--- a/modules/common/widgets/ToolbarPairedFab.qml
++++ b/modules/common/widgets/ToolbarPairedFab.qml
+@@ -18,8 +18,6 @@ Item {
+-    Loader {
+-        active: root.enableShadow
+-        anchors.fill: parent
+-        sourceComponent: StyledRectangularShadow {
+-            target: fabWidget
+-            radius: fabWidget.buttonRadius
+-        }
++    StyledRectangularShadow {
++        visible: root.enableShadow
++        anchors.fill: fabWidget
++        target: fabWidget
++        radius: fabWidget.buttonRadius
+     }
+diff --git a/modules/ii/bar/UtilButtons.qml b/modules/ii/bar/UtilButtons.qml
+--- a/modules/ii/bar/UtilButtons.qml
++++ b/modules/ii/bar/UtilButtons.qml
+@@ -28,1 +28,1 @@ Item {
+-                onClicked: Quickshell.execDetached(["qs", "-p", Quickshell.shellPath(""), "ipc", "call", "region", "screenshot"]);
++                onClicked: Quickshell.execDetached(["illogical-impulse-shell-ipc", "region", "screenshot"]);
+diff --git a/modules/common/utils/ScreenshotAction.qml b/modules/common/utils/ScreenshotAction.qml
+--- a/modules/common/utils/ScreenshotAction.qml
++++ b/modules/common/utils/ScreenshotAction.qml
+@@ -39,6 +39,8 @@ Singleton {
+         const slurpRegion = `${rx},${ry} ${rw}x${rh}`
+         const uploadAndGetUrl = (filePath) => {
+-            return `curl -sF files[]=@'${StringUtils.shellSingleQuoteEscape(filePath)}' ${root.fileUploadApiEndpoint} | jq -r '.files[0].url'`
++            return `curl --fail-with-body --silent --show-error `
++                + `--form 'files[]=@${StringUtils.shellSingleQuoteEscape(filePath)}' `
++                + `'${StringUtils.shellSingleQuoteEscape(root.fileUploadApiEndpoint)}' | jq --exit-status --raw-output '.files[0].url'`
+         }
+         const annotationCommand = `${Config.options.regionSelector.annotation.useSatty ? "satty" : "swappy"} -f -`;
+         switch (action) {
+@@ -68,10 +70,10 @@ Singleton {
+                 return ["bash", "-c", `${cropToStdout} | ${annotationCommand} && ${cleanup}`]
+                 break;
+             case ScreenshotAction.Action.Search:
+-                return ["bash", "-c", `${cropInPlace} && xdg-open "${root.imageSearchEngineBaseUrl}$(${uploadAndGetUrl(screenshotPath)})" && ${cleanup}`]
++                return ["bash", "-c", `set -o pipefail; ${cropInPlace} && upload_url="$(${uploadAndGetUrl(screenshotPath)})" && test -n "$upload_url" && xdg-open "${root.imageSearchEngineBaseUrl}$upload_url"; status=$?; ${cleanup}; if (( status != 0 )); then notify-send "Image search failed" "The selected image could not be uploaded or opened."; fi; exit $status`]
+                 break;
+             case ScreenshotAction.Action.CharRecognition:
+-                return ["bash", "-c", `${cropInPlace} && tesseract '${StringUtils.shellSingleQuoteEscape(screenshotPath)}' stdout -l $(tesseract --list-langs | awk 'NR>1{print $1}' | tr '\\n' '+' | sed 's/\\+$/\\n/') | wl-copy && ${cleanup}`]
++                return ["bash", "-c", `set -o pipefail; ${cropInPlace} && languages="$(tesseract --list-langs 2>/dev/null | tail -n +2 | paste -sd+ -)" && test -n "$languages" && tesseract '${StringUtils.shellSingleQuoteEscape(screenshotPath)}' stdout -l "$languages" | wl-copy; status=$?; ${cleanup}; if (( status != 0 )); then notify-send "OCR failed" "No text was copied from the selected image."; fi; exit $status`]
+                 break;
+             case ScreenshotAction.Action.Record:
+                 return ["bash", "-c", `${Directories.recordScriptPath} --region '${slurpRegion}'`]
+diff --git a/modules/settings/QuickConfig.qml b/modules/settings/QuickConfig.qml
+--- a/modules/settings/QuickConfig.qml
++++ b/modules/settings/QuickConfig.qml
+@@ -33,1 +33,1 @@ ContentPage {
+-            Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --mode ${dark ? "dark" : "light"} --noswitch`]);
++            Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--mode", dark ? "dark" : "light", "--noswitch"]);
+@@ -147,1 +147,1 @@ ContentPage {
+-                Quickshell.execDetached(["bash", "-c", `${Directories.wallpaperSwitchScriptPath} --noswitch`]);
++                Quickshell.execDetached([Directories.wallpaperSwitchScriptPath, "--type", newValue, "--noswitch"]);
+diff --git a/scripts/colors/switchwall.sh b/scripts/colors/switchwall.sh
+--- a/scripts/colors/switchwall.sh
++++ b/scripts/colors/switchwall.sh
+@@ -260,6 +260,4 @@ switch() {
+-    matugen "${matugen_args[@]}"
+-    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"
+-    python3 "$SCRIPT_DIR/generate_colors_material.py" "${generate_colors_material_args[@]}" \
+-        > "$STATE_DIR"/user/generated/material_colors.scss
+-    deactivate
+-    "$SCRIPT_DIR"/applycolor.sh
++    if ! illogical-impulse-shell-theme "${matugen_args[@]}"; then
++        notify-send "Shell theme failed" "The shell color palette could not be generated."
++        return 1
++    fi
