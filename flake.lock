@@ -1,0 +1,101 @@
+{
+  "nodes": {
+    "googleSansFlex": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1763459024,
+        "narHash": "sha256-HMAS0L/Tsqyl1xI16cyIzg9LEb6Dyq91JY4wqFQV9Vs=",
+        "owner": "end-4",
+        "repo": "google-sans-flex",
+        "rev": "251aa5abd30496368f634e54ce2a508fe5a2fdfa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "end-4",
+        "repo": "google-sans-flex",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1785828668,
+        "narHash": "sha256-8fsyqeO+mJqvIzeO4xIpgJe/f7MTbbVTEC6RT6WSXNs=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "e72e4f299401a3689d4b3d5fc6496b11db7064eb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "quickshell": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1773916211,
+        "narHash": "sha256-FyO/nPw2CZn35YL22Xl8V5qkTTANwKoNw2MIAIcmZH0=",
+        "owner": "quickshell-mirror",
+        "repo": "quickshell",
+        "rev": "7511545ee20664e3b8b8d3322c0ffe7567c56f7a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "quickshell-mirror",
+        "repo": "quickshell",
+        "rev": "7511545ee20664e3b8b8d3322c0ffe7567c56f7a",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "googleSansFlex": "googleSansFlex",
+        "nixpkgs": "nixpkgs",
+        "quickshell": "quickshell",
+        "roundedPolygon": "roundedPolygon",
+        "upstream": "upstream"
+      }
+    },
+    "roundedPolygon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1771173575,
+        "narHash": "sha256-p1Ia0oQCWnik2saVMgv7IABkaJV43PoY7uuwXjXlc+Q=",
+        "owner": "end-4",
+        "repo": "rounded-polygon-qmljs",
+        "rev": "e31ec4cb4ebf6a46b267f5c42eabf6874916fa16",
+        "type": "github"
+      },
+      "original": {
+        "owner": "end-4",
+        "repo": "rounded-polygon-qmljs",
+        "rev": "e31ec4cb4ebf6a46b267f5c42eabf6874916fa16",
+        "type": "github"
+      }
+    },
+    "upstream": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785144061,
+        "narHash": "sha256-PT2amtOlgsvf5ijjrLW42z3JcANu49+4oWk2XA2XFfQ=",
+        "owner": "end-4",
+        "repo": "dots-hyprland",
+        "rev": "aed4d1ec63f584905c28d2a678db5845579fdafc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "end-4",
+        "repo": "dots-hyprland",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
