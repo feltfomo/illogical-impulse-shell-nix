@@ -47,11 +47,11 @@
       treefmtEval = treefmt-nix.lib.evalModule pkgs ./formatter.nix;
       shellFonts = pkgs.callPackage ./fonts.nix { inherit googleSansFlex; };
       shellPython = pkgs.callPackage ./python.nix { };
-      shellSource = pkgs.callPackage ./source.nix {
+      shellSource = pkgs.callPackage ./shells/end4/source.nix {
         inherit roundedPolygon upstream;
       };
-      shellTheme = pkgs.callPackage ./theme.nix { inherit upstream; };
-      runnableShell = pkgs.callPackage ./package.nix {
+      shellTheme = pkgs.callPackage ./shells/end4/theme.nix { inherit upstream; };
+      runnableShell = pkgs.callPackage ./shells/end4/package.nix {
         inherit
           shellFonts
           shellPython
