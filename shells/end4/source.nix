@@ -41,6 +41,14 @@ stdenvNoCC.mkDerivation {
       printf '\n'
     } | patch -d "$out/share/quickshell/ii" -p1
 
+    substituteInPlace "$out/share/quickshell/ii/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml" \
+      --replace-fail 'fileModelData: root.fileModelData' \
+      'fileModelData: root.fileModelData
+                        iconColor: root.colText'
+
+    install -m 0644 ${../common/DirectoryIcon.qml} \
+      "$out/share/quickshell/ii/modules/common/widgets/DirectoryIcon.qml"
+
     runHook postInstall
   '';
 

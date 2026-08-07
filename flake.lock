@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "end4Pc": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786083179,
+        "narHash": "sha256-k7OEnSJF2jgf+RqayiGCUGWO/eUFED1yupq22DlhFkw=",
+        "owner": "pctrade",
+        "repo": "end4-pC",
+        "rev": "f334b97c3d2dc6409d2131b63473dc58f8f2a229",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pctrade",
+        "repo": "end4-pC",
+        "type": "github"
+      }
+    },
     "googleSansFlex": {
       "flake": false,
       "locked": {
@@ -55,6 +71,7 @@
     },
     "root": {
       "inputs": {
+        "end4Pc": "end4Pc",
         "googleSansFlex": "googleSansFlex",
         "nixpkgs": "nixpkgs",
         "quickshell": "quickshell",
