@@ -12,6 +12,10 @@ diff --git a/scripts/colors/switchwall.sh b/scripts/colors/switchwall.sh
 +        notify-send "Shell theme failed" "The shell color palette could not be generated."
 +        return 1
 +    fi
+@@ -361,3 +364,0 @@
+-    if [[ -z "$colors_lock_flag" ]]; then
+-        "$SCRIPT_DIR"/applycolor.sh
+-    fi
 diff --git a/scripts/colors/applycolor.sh b/scripts/colors/applycolor.sh
 --- a/scripts/colors/applycolor.sh
 +++ b/scripts/colors/applycolor.sh
@@ -108,3 +112,66 @@ diff --git a/modules/ii/bar/Workspaces.qml b/modules/ii/bar/Workspaces.qml
 +                    property var mainAppIconSource: Config.options?.bar.workspaces.showAppIcons && biggestWindow
 +                        ? Quickshell.iconPath(AppSearch.guessIcon(biggestWindow.class), "")
 +                        : ""
+diff --git a/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml b/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml
+--- a/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml
++++ b/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml
+@@ -67 +67 @@
+-                    sourceComponent: ThumbnailImage {
++                    sourceComponent: Image {
+@@ -70,2 +70,2 @@
+-                        generateThumbnail: false
+-                        sourcePath: (fileModelData && fileModelData.filePath) ? fileModelData.filePath : ""
++                        source: Qt.resolvedUrl(root.fileModelData?.filePath ?? "")
++                        asynchronous: true
+@@ -72,0 +73 @@
++                        retainWhileLoading: false
+@@ -78,26 +78,0 @@
+-
+-                        Connections {
+-                            function onThumbnailGenerated(directory) {
+-                                if (thumbnailImage.status !== Image.Error)
+-                                    return ;
+-
+-                                if (FileUtils.parentDirectory(thumbnailImage.sourcePath) !== FileUtils.trimFileProtocol(directory))
+-                                    return ;
+-
+-                                thumbnailImage.source = "";
+-                                thumbnailImage.source = thumbnailImage.thumbnailPath;
+-                            }
+-
+-                            function onThumbnailGeneratedFile(filePath) {
+-                                if (thumbnailImage.status !== Image.Error)
+-                                    return ;
+-
+-                                if (Qt.resolvedUrl(thumbnailImage.sourcePath) !== Qt.resolvedUrl(filePath))
+-                                    return ;
+-
+-                                thumbnailImage.source = "";
+-                                thumbnailImage.source = thumbnailImage.thumbnailPath;
+-                            }
+-
+-                            target: Wallpapers
+-                        }
+diff --git a/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml b/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml
+--- a/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml
++++ b/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml
+@@ -53,6 +53 @@
+-    function updateThumbnails() {
+-        const item = gridLoader.item;
+-        const totalImageMargin = (Appearance.sizes.wallpaperSelectorItemMargins + Appearance.sizes.wallpaperSelectorItemPadding) * 2;
+-        const cellW = item?.cellWidth ?? (wallpaperGridBackground.width / root.columns);
+-        const cellH = item?.cellHeight ?? (cellW / root.previewCellAspectRatio);
+-        const thumbnailSizeName = Images.thumbnailSizeNameForDimensions(cellW - totalImageMargin, cellH - totalImageMargin);
++    function refreshWallpapers() {
+@@ -60 +55 @@
+-        Qt.callLater(() => Wallpapers.generateThumbnail(thumbnailSizeName));
++        Wallpapers.rebuildWallpaperModel();
+@@ -472 +467 @@
+-                            onUpdateThumbnailsRequested: root.updateThumbnails()
++                            onUpdateThumbnailsRequested: root.refreshWallpapers()
+@@ -641 +636 @@
+-                                    onClicked: root.updateThumbnails()
++                                    onClicked: root.refreshWallpapers()
+@@ -644 +639 @@
+-                                        text: Translation.tr("Update thumbnails")
++                                        text: Translation.tr("Refresh wallpapers")

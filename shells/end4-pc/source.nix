@@ -47,8 +47,6 @@ stdenvNoCC.mkDerivation {
       --replace-fail '#!/bin/bash' '#!${bash}/bin/bash'
 
     substituteInPlace "$target/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml" \
-      --replace-fail 'generateThumbnail: false' \
-      'generateThumbnail: true' \
       --replace-fail 'fileModelData: root.fileModelData' \
       'fileModelData: root.fileModelData
                         iconColor: root.colText'
