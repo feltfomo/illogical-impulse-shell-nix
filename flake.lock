@@ -3,11 +3,11 @@
     "end4Pc": {
       "flake": false,
       "locked": {
-        "lastModified": 1786083179,
-        "narHash": "sha256-k7OEnSJF2jgf+RqayiGCUGWO/eUFED1yupq22DlhFkw=",
+        "lastModified": 1790620334,
+        "narHash": "sha256-HdkhIAs7NyQH2CJWATLTPb1JznRO1II/p7JVqoJ3Zcc=",
         "owner": "pctrade",
         "repo": "end4-pC",
-        "rev": "f334b97c3d2dc6409d2131b63473dc58f8f2a229",
+        "rev": "ed18173ce33db3c6eac01ebff680604446c62f15",
         "type": "github"
       },
       "original": {

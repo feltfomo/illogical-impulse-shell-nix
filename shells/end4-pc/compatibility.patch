@@ -1,132 +1,87 @@
-# routes end4-pc through its packaged config and update commands at f334b97c
-# recheck every hunk when the end4-pc pin moves
+# Route shell actions through the packaged configuration.
 
 diff --git a/scripts/colors/switchwall.sh b/scripts/colors/switchwall.sh
 --- a/scripts/colors/switchwall.sh
 +++ b/scripts/colors/switchwall.sh
-@@ -1,6 +1,6 @@
- #!/usr/bin/env bash
-
+@@ -3 +3 @@
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
- XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
- XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
- XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
-@@ -267,7 +267,10 @@ switch() {
-         done
-     fi
-
+@@ -334 +334,4 @@
 -    matugen "${matugen_args[@]}"
 +    if ! end4-pc-shell-theme "${matugen_args[@]}"; then
 +        notify-send "Shell theme failed" "The shell color palette could not be generated."
 +        return 1
 +    fi
-
-     if [[ -n "$colors_lock_flag" ]]; then
-         if [[ -f "$colors_json_path" ]]; then
 diff --git a/scripts/colors/applycolor.sh b/scripts/colors/applycolor.sh
 --- a/scripts/colors/applycolor.sh
 +++ b/scripts/colors/applycolor.sh
-@@ -1,6 +1,6 @@
- #!/usr/bin/env bash
-
+@@ -3 +3 @@
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
- XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
- XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
- XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 diff --git a/scripts/kvantum/materialQT.sh b/scripts/kvantum/materialQT.sh
 --- a/scripts/kvantum/materialQT.sh
 +++ b/scripts/kvantum/materialQT.sh
-@@ -1,6 +1,6 @@
- #!/usr/bin/env bash
-
+@@ -3 +3 @@
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
- XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
- XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
- XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 diff --git a/scripts/colors/random/random_osu_wall.sh b/scripts/colors/random/random_osu_wall.sh
 --- a/scripts/colors/random/random_osu_wall.sh
 +++ b/scripts/colors/random/random_osu_wall.sh
-@@ -1,6 +1,6 @@
- #!/usr/bin/env bash
-
+@@ -20 +20 @@
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
- XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
- XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
- XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 diff --git a/scripts/colors/random/random_konachan_wall.sh b/scripts/colors/random/random_konachan_wall.sh
 --- a/scripts/colors/random/random_konachan_wall.sh
 +++ b/scripts/colors/random/random_konachan_wall.sh
-@@ -1,6 +1,6 @@
- #!/usr/bin/env bash
-
+@@ -20 +20 @@
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
- XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
- XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
- XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 diff --git a/modules/ii/settings/pages/About.qml b/modules/ii/settings/pages/About.qml
 --- a/modules/ii/settings/pages/About.qml
 +++ b/modules/ii/settings/pages/About.qml
-@@ -14,10 +14,5 @@ ContentPage {
-     bottomContentPadding: 35
-
-     function runUpdateDots() {
--        Quickshell.execDetached([
--            "kitty", "--hold",
--            "bash", "-c",
--            "killall qs; sleep 0.5; cd ~/.config/quickshell/ && rm -rf end4-pC && git clone https://github.com/pctrade/end4-pC.git && nohup qs -c end4-pC > /tmp/qs.log 2>&1 &"
--        ])
+@@ -27,25 +27 @@
+-        const updateScript = `
+-            set -e
+-            DIR="$HOME/.config/quickshell"
+-
+-            # Download to temp first
+-            rm -rf "$DIR/end4-pC-tmp"
+-            git clone https://github.com/pctrade/end4-pC.git "$DIR/end4-pC-tmp"
+-
+-            # Apply update
+-            rm -rf "$DIR/end4-pC-old"
+-            [ -d "$DIR/end4-pC" ] && mv "$DIR/end4-pC" "$DIR/end4-pC-old"
+-            mv "$DIR/end4-pC-tmp" "$DIR/end4-pC"
+-
+-            # Reload
+-            killall qs 2>/dev/null || true
+-            sleep 0.5
+-            setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
+-            disown
+-
+-            # Cleanup
+-            rm -rf "$DIR/end4-pC-old"
+-        `
+-
+-        Quickshell.execDetached(["kitty", "--hold", "bash", "-c", updateScript])
 -        Qt.callLater(() => GlobalStates.settingsOpen = false)
 +        Quickshell.execDetached(["notify-send", "end4-pC", "Updates are managed by Nix"])
-     }
-diff --git a/modules/ii/sidebarRight/SidebarRightContent.qml b/modules/ii/sidebarRight/SidebarRightContent.qml
---- a/modules/ii/sidebarRight/SidebarRightContent.qml
-+++ b/modules/ii/sidebarRight/SidebarRightContent.qml
-@@ -36,6 +36,33 @@ Item {
-
-     readonly property MprisPlayer activePlayer: MprisController.activePlayer
-     readonly property var realPlayers: MprisController.players
-+
-+    function filterDuplicatePlayers(players) {
-+        const filtered = []
-+        const used = new Set()
-+
-+        for (let i = 0; i < players.length; ++i) {
-+            if (used.has(i)) continue
-+            const first = players[i]
-+            const group = [i]
-+
-+            for (let j = i + 1; j < players.length; ++j) {
-+                const second = players[j]
-+                if ((first.trackTitle && second.trackTitle &&
-+                     (first.trackTitle.includes(second.trackTitle) || second.trackTitle.includes(first.trackTitle))) ||
-+                    (first.position - second.position <= 2 && first.length - second.length <= 2)) {
-+                    group.push(j)
-+                }
-+            }
-+
-+            const withArt = group.find(index => players[index].trackArtUrl?.length > 0)
-+            const chosen = withArt === undefined ? group[0] : withArt
-+            filtered.push(players[chosen])
-+            group.forEach(index => used.add(index))
-+        }
-+        return filtered
-+    }
-+
-     readonly property var meaningfulPlayers: {
-         const preferred = Config.options.bar.media.preferredPlayer.trim().toLowerCase()
-         if (preferred.length === 0) return filterDuplicatePlayers(realPlayers)
+diff --git a/modules/common/functions/Session.qml b/modules/common/functions/Session.qml
+--- a/modules/common/functions/Session.qml
++++ b/modules/common/functions/Session.qml
+@@ -20,5 +20 @@
+-        if (WM.compositor === "niri") {
+-            Quickshell.execDetached(["qs", "-c", "end4-pC", "ipc", "call", "lock", "activate"]);
+-        } else {
+-            Quickshell.execDetached(["loginctl", "lock-session"]);
+-        }
++        Quickshell.execDetached(["end4-pc-shell-ipc", "lock", "activate"]);
+@@ -49 +44,0 @@
+-        closeAllWindows();
 diff --git a/modules/ii/regionSelector/OptionsToolbar.qml b/modules/ii/regionSelector/OptionsToolbar.qml
 --- a/modules/ii/regionSelector/OptionsToolbar.qml
 +++ b/modules/ii/regionSelector/OptionsToolbar.qml
-@@ -28,11 +28,20 @@ Toolbar {
-             {"icon": "activity_zone", "name": Translation.tr("Rect")},
-             {"icon": "gesture", "name": Translation.tr("Circle")}
-         ]
+@@ -31 +31,11 @@
 -        currentIndex: root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
 +        function syncFromSelectionMode() {
 +            const nextIndex = root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
@@ -139,26 +94,17 @@ diff --git a/modules/ii/regionSelector/OptionsToolbar.qml b/modules/ii/regionSel
 +                tabBar.syncFromSelectionMode()
 +            }
 +        }
-         onCurrentIndexChanged: {
+@@ -33,3 +43,2 @@
 -            const newMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle;
 -            if (root.selectionMode !== newMode)
 -                root.selectionMode = newMode;
 +            const nextMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle
 +            if (root.selectionMode !== nextMode) root.selectionMode = nextMode
-         }
-     }
- }
 diff --git a/modules/ii/bar/Workspaces.qml b/modules/ii/bar/Workspaces.qml
 --- a/modules/ii/bar/Workspaces.qml
 +++ b/modules/ii/bar/Workspaces.qml
-@@ -201,7 +201,9 @@ ButtonMouseArea {
-                 delegate: WorkspaceItem {
-                     id: wsApp
-                     property var biggestWindow: wsModel.biggestWindow[index]
+@@ -211 +211,3 @@
 -                    property var mainAppIconSource: Quickshell.iconPath(AppSearch.guessIcon(biggestWindow?.class), "image-missing")
 +                    property var mainAppIconSource: Config.options?.bar.workspaces.showAppIcons && biggestWindow
 +                        ? Quickshell.iconPath(AppSearch.guessIcon(biggestWindow.class), "")
 +                        : ""
-
-                     AppIcon {
-                         id: appIcon

@@ -46,10 +46,6 @@ stdenvNoCC.mkDerivation {
     substituteInPlace "$target/scripts/musicRecognition/recognize-music.sh" \
       --replace-fail '#!/bin/bash' '#!${bash}/bin/bash'
 
-    substituteInPlace "$target/modules/ii/bar/BarContent.qml" \
-      --replace-fail 'if (item && item.hasOwnProperty("mirrored"))' \
-      'if (item && modelData === "visualizer")'
-
     substituteInPlace "$target/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml" \
       --replace-fail 'generateThumbnail: false' \
       'generateThumbnail: true' \
