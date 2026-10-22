@@ -31,6 +31,7 @@
   procps,
   pulseaudio,
   qt6,
+  qt6Packages,
   quickshell,
   shellFonts,
   shellPython,
@@ -127,8 +128,9 @@ stdenvNoCC.mkDerivation {
   nativeBuildInputs = [ qt6.wrapQtAppsHook ];
 
   buildInputs = [
-    quickshell
     gsettings-desktop-schemas
+    qt6Packages.qt6ct
+    quickshell
   ]
   ++ iconInputs
   ++ qmlInputs;
@@ -191,6 +193,8 @@ stdenvNoCC.mkDerivation {
 
     export ILLOGICAL_IMPULSE_VIRTUAL_ENV=${shellPython}
     export FONTCONFIG_FILE=${fontConfig}
+    export QT_QPA_PLATFORMTHEME=qt6ct
+    export QT_PLUGIN_PATH=${qt6Packages.qt6ct}/${qt6.qtbase.qtPluginPrefix}:"''${QT_PLUGIN_PATH:-}"
     export XDG_DATA_DIRS=${lib.makeSearchPath "share" iconInputs}:"''${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
     export QML2_IMPORT_PATH=${qmlImportPath}:"''${QML2_IMPORT_PATH:-}"
     export QML_IMPORT_PATH=${qmlImportPath}:"''${QML_IMPORT_PATH:-}"
