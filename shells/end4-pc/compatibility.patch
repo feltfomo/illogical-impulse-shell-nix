@@ -3,130 +3,189 @@
 diff --git a/scripts/colors/switchwall.sh b/scripts/colors/switchwall.sh
 --- a/scripts/colors/switchwall.sh
 +++ b/scripts/colors/switchwall.sh
-@@ -3 +3 @@
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env bash
+ 
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
-@@ -334 +334,4 @@
+ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+ XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+ XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+@@ -379,7 +379,10 @@
+         done
+     fi
+ 
 -    matugen "${matugen_args[@]}"
 +    if ! end4-pc-shell-theme "${matugen_args[@]}"; then
 +        notify-send "Shell theme failed" "The shell color palette could not be generated."
 +        return 1
 +    fi
-@@ -361,3 +364,0 @@
+ 
+     if [[ -n "$colors_lock_flag" ]]; then
+         if [[ -f "$colors_json_path" ]]; then
+@@ -406,9 +409,6 @@
+         > "$output_scss"
+     deactivate
+ 
 -    if [[ -z "$colors_lock_flag" ]]; then
 -        "$SCRIPT_DIR"/applycolor.sh
 -    fi
+ 
+     max_width_desired="$(hyprctl monitors -j | jq '([.[].width] | min)' | xargs)"
+     max_height_desired="$(hyprctl monitors -j | jq '([.[].height] | min)' | xargs)"
 diff --git a/scripts/colors/applycolor.sh b/scripts/colors/applycolor.sh
 --- a/scripts/colors/applycolor.sh
 +++ b/scripts/colors/applycolor.sh
-@@ -3 +3 @@
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env bash
+ 
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
+ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+ XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+ XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 diff --git a/scripts/kvantum/materialQT.sh b/scripts/kvantum/materialQT.sh
 --- a/scripts/kvantum/materialQT.sh
 +++ b/scripts/kvantum/materialQT.sh
-@@ -3 +3 @@
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env bash
+ 
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
+ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+ XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+ XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 diff --git a/scripts/colors/random/random_osu_wall.sh b/scripts/colors/random/random_osu_wall.sh
 --- a/scripts/colors/random/random_osu_wall.sh
 +++ b/scripts/colors/random/random_osu_wall.sh
-@@ -20 +20 @@
+@@ -17,7 +17,7 @@
+     echo "$HOME/Pictures"
+ }
+ 
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
+ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+ XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+ XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 diff --git a/scripts/colors/random/random_konachan_wall.sh b/scripts/colors/random/random_konachan_wall.sh
 --- a/scripts/colors/random/random_konachan_wall.sh
 +++ b/scripts/colors/random/random_konachan_wall.sh
-@@ -20 +20 @@
+@@ -17,7 +17,7 @@
+     echo "$HOME/Pictures"
+ }
+ 
 -QUICKSHELL_CONFIG_NAME="ii"
 +QUICKSHELL_CONFIG_NAME="end4-pC"
-diff --git a/modules/ii/settings/pages/About.qml b/modules/ii/settings/pages/About.qml
---- a/modules/ii/settings/pages/About.qml
-+++ b/modules/ii/settings/pages/About.qml
-@@ -27,25 +27 @@
+ XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+ XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+ XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+diff --git a/services/DotsUpdater.qml b/services/DotsUpdater.qml
+--- a/services/DotsUpdater.qml
++++ b/services/DotsUpdater.qml
+@@ -1,42 +1,13 @@
+ pragma Singleton
+ 
+-import qs
+-import QtQuick
+ import Quickshell
+ 
+ Singleton {
+-    id: root
+-
+     function runSystemUpdate() {
+-        Quickshell.execDetached([
+-            "kitty", "--hold",
+-            "fish", "-i", "-l", "-c",
+-            "yay -Syu --combinedupgrade=false"
+-        ])
+-        Qt.callLater(() => GlobalStates.settingsOpen = false)
++        Quickshell.execDetached(["notify-send", "end4-pC", "System updates are managed by NixOS"])
+     }
+ 
+     function runUpdateDots() {
 -        const updateScript = `
 -            set -e
 -            DIR="$HOME/.config/quickshell"
 -
--            # Download to temp first
 -            rm -rf "$DIR/end4-pC-tmp"
 -            git clone https://github.com/pctrade/end4-pC.git "$DIR/end4-pC-tmp"
 -
--            # Apply update
 -            rm -rf "$DIR/end4-pC-old"
 -            [ -d "$DIR/end4-pC" ] && mv "$DIR/end4-pC" "$DIR/end4-pC-old"
 -            mv "$DIR/end4-pC-tmp" "$DIR/end4-pC"
 -
--            # Reload
 -            killall qs 2>/dev/null || true
 -            sleep 0.5
 -            setsid qs -c end4-pC >/tmp/qs.log 2>&1 < /dev/null &
 -            disown
 -
--            # Cleanup
 -            rm -rf "$DIR/end4-pC-old"
 -        `
 -
 -        Quickshell.execDetached(["kitty", "--hold", "bash", "-c", updateScript])
 -        Qt.callLater(() => GlobalStates.settingsOpen = false)
-+        Quickshell.execDetached(["notify-send", "end4-pC", "Updates are managed by Nix"])
++        Quickshell.execDetached(["notify-send", "end4-pC", "Shell updates are managed by Nix"])
+     }
+ }
 diff --git a/modules/common/functions/Session.qml b/modules/common/functions/Session.qml
 --- a/modules/common/functions/Session.qml
 +++ b/modules/common/functions/Session.qml
-@@ -20,5 +20 @@
+@@ -17,11 +17,7 @@
+     }
+ 
+     function lock() {
 -        if (WM.compositor === "niri") {
 -            Quickshell.execDetached(["qs", "-c", "end4-pC", "ipc", "call", "lock", "activate"]);
 -        } else {
 -            Quickshell.execDetached(["loginctl", "lock-session"]);
 -        }
 +        Quickshell.execDetached(["end4-pc-shell-ipc", "lock", "activate"]);
-@@ -49 +44,0 @@
+     }
+ 
+     function suspend() {
+@@ -46,7 +42,6 @@
+     }
+ 
+     function poweroff() {
 -        closeAllWindows();
-diff --git a/modules/ii/regionSelector/OptionsToolbar.qml b/modules/ii/regionSelector/OptionsToolbar.qml
---- a/modules/ii/regionSelector/OptionsToolbar.qml
-+++ b/modules/ii/regionSelector/OptionsToolbar.qml
-@@ -31 +31,11 @@
--        currentIndex: root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
-+        function syncFromSelectionMode() {
-+            const nextIndex = root.selectionMode === RegionSelection.SelectionMode.RectCorners ? 0 : 1
-+            if (currentIndex !== nextIndex) setCurrentIndex(nextIndex)
-+        }
-+        Component.onCompleted: syncFromSelectionMode()
-+        Connections {
-+            target: root
-+            function onSelectionModeChanged() {
-+                tabBar.syncFromSelectionMode()
-+            }
-+        }
-@@ -33,3 +43,2 @@
--            const newMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle;
--            if (root.selectionMode !== newMode)
--                root.selectionMode = newMode;
-+            const nextMode = currentIndex === 0 ? RegionSelection.SelectionMode.RectCorners : RegionSelection.SelectionMode.Circle
-+            if (root.selectionMode !== nextMode) root.selectionMode = nextMode
+         Quickshell.execDetached(["bash", "-c", `systemctl poweroff || loginctl poweroff`]);
+     }
+ 
 diff --git a/modules/ii/bar/Workspaces.qml b/modules/ii/bar/Workspaces.qml
 --- a/modules/ii/bar/Workspaces.qml
 +++ b/modules/ii/bar/Workspaces.qml
-@@ -211 +211,3 @@
--                    property var mainAppIconSource: Quickshell.iconPath(AppSearch.guessIcon(biggestWindow?.class), "image-missing")
+@@ -241,7 +241,9 @@
+                 delegate: WorkspaceItem {
+                     id: wsApp
+                     property var biggestWindow: wsModel.biggestWindow[index]
+-                    property var mainAppIconSource: SystemAppearance.iconPath(AppSearch.guessIcon(biggestWindow?.class), "image-missing")
 +                    property var mainAppIconSource: Config.options?.bar.workspaces.showAppIcons && biggestWindow
-+                        ? Quickshell.iconPath(AppSearch.guessIcon(biggestWindow.class), "")
++                        ? SystemAppearance.iconPath(AppSearch.guessIcon(biggestWindow.class), "")
 +                        : ""
+ 
+                     AppIcon {
+                         id: appIcon
 diff --git a/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml b/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml
 --- a/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml
 +++ b/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml
-@@ -67 +67 @@
--                    sourceComponent: ThumbnailImage {
-+                    sourceComponent: Image {
-@@ -70,2 +70,2 @@
+@@ -74,41 +74,17 @@
+                         radius: Appearance.rounding.small
+                         color: "transparent"
+ 
+-                    ThumbnailImage {
++                    Image {
+                         id: thumbnailImage
+                         anchors.fill: parent
 -                        generateThumbnail: false
 -                        sourcePath: (fileModelData && fileModelData.filePath) ? fileModelData.filePath : ""
 +                        source: Qt.resolvedUrl(root.fileModelData?.filePath ?? "")
 +                        asynchronous: true
-@@ -72,0 +73 @@
 +                        retainWhileLoading: false
-@@ -78,26 +78,0 @@
--
+                         cache: false
+                         fillMode: Image.PreserveAspectCrop
+                         sourceSize.width: root.imageWidth
+                         sourceSize.height: root.imageHeight
+ 
 -                        Connections {
 -                            function onThumbnailGenerated(directory) {
 -                                if (thumbnailImage.status !== Image.Error)
@@ -152,10 +211,16 @@ diff --git a/modules/ii/wallpaperSelector/WallpaperDirectoryItem.qml b/modules/i
 -
 -                            target: Wallpapers
 -                        }
+                     }
+                     }
+ 
 diff --git a/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml b/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml
 --- a/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml
 +++ b/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml
-@@ -53,6 +53 @@
+@@ -51,14 +51,9 @@
+         { hex: "999999", name: Translation.tr("Grayscale"), q: "000000,999999,cccccc,ffffff,424153" }
+     ]
+ 
 -    function updateThumbnails() {
 -        const item = gridLoader.item;
 -        const totalImageMargin = (Appearance.sizes.wallpaperSelectorItemMargins + Appearance.sizes.wallpaperSelectorItemPadding) * 2;
@@ -163,15 +228,31 @@ diff --git a/modules/ii/wallpaperSelector/WallpaperSelectorContent.qml b/modules
 -        const cellH = item?.cellHeight ?? (cellW / root.previewCellAspectRatio);
 -        const thumbnailSizeName = Images.thumbnailSizeNameForDimensions(cellW - totalImageMargin, cellH - totalImageMargin);
 +    function refreshWallpapers() {
-@@ -60 +55 @@
+         Wallpapers.setDirectory(`${Directories.pictures}/Wallpapers`);
 -        Qt.callLater(() => Wallpapers.generateThumbnail(thumbnailSizeName));
 +        Wallpapers.rebuildWallpaperModel();
-@@ -472 +467 @@
+     }
+ 
+     function handleFilePasting(event) {
+@@ -476,7 +471,7 @@
+                             resolution: root.selectedResolution
+                             colorGroup: root.selectedColorGroup
+                             onWallpaperSelected: path => root.selectWallpaperPath(path)
 -                            onUpdateThumbnailsRequested: root.updateThumbnails()
 +                            onUpdateThumbnailsRequested: root.refreshWallpapers()
-@@ -641 +636 @@
+                         }
+                     }
+ 
+@@ -646,10 +641,10 @@
+                                 }
+                                 IconToolbarButton {
+                                     implicitWidth: height
 -                                    onClicked: root.updateThumbnails()
 +                                    onClicked: root.refreshWallpapers()
-@@ -644 +639 @@
+                                     text: "reset_image"
+                                     StyledToolTip {
 -                                        text: Translation.tr("Update thumbnails")
 +                                        text: Translation.tr("Refresh wallpapers")
+                                     }
+                                 }
+                                 IconToolbarButton {
