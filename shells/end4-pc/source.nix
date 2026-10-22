@@ -1,8 +1,11 @@
 {
   bash,
+  cliphist,
   end4Pc,
+  file,
   lib,
   patch,
+  python3,
   stdenvNoCC,
 }:
 stdenvNoCC.mkDerivation {
@@ -11,7 +14,12 @@ stdenvNoCC.mkDerivation {
 
   src = end4Pc;
 
-  nativeBuildInputs = [ patch ];
+  nativeBuildInputs = [
+    cliphist
+    file
+    patch
+    python3
+  ];
 
   dontConfigure = true;
   dontBuild = true;
@@ -42,6 +50,10 @@ stdenvNoCC.mkDerivation {
       sed '/^# /d' ${./compatibility.patch}
       printf '\n'
     } | patch -d "$target" -p1
+
+    patch -d "$target" -p1 < ${./clipboard.patch}
+    install -m 0644 ${./copy-history.py} "$target/scripts/clipboard/copy-history.py"
+    python3 ${./test-clipboard.py} "$target"
 
     substituteInPlace "$target/scripts/musicRecognition/recognize-music.sh" \
       --replace-fail '#!/bin/bash' '#!${bash}/bin/bash'

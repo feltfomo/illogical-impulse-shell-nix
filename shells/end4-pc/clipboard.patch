@@ -1,0 +1,45 @@
+--- a/services/Cliphist.qml
++++ b/services/Cliphist.qml
+@@ -134,22 +134,21 @@
+         readProc.running = true
+     }
+ 
++    function copyArguments(entry) {
++        return ["python3", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/clipboard/copy-history.py`, root.cliphistBinary, root.entryId(entry)];
++    }
++
++    function copyCommand(entry) {
++        return root.copyArguments(entry).map(argument => `'${StringUtils.shellSingleQuoteEscape(argument)}'`).join(" ");
++    }
++
+     function copy(entry) {
+-        if (root.cliphistBinary.includes("cliphist")) // Classic cliphist
+-            Quickshell.execDetached(["bash", "-c", `printf '${StringUtils.shellSingleQuoteEscape(entry)}' | ${root.cliphistBinary} decode | wl-copy`]);
+-        else { // Stash
+-            const entryNumber = entry.split("\t")[0];
+-            Quickshell.execDetached(["bash", "-c", `${root.cliphistBinary} decode ${entryNumber} | wl-copy`]);
+-        }
++        Quickshell.execDetached(root.copyArguments(entry));
+     }
+ 
+     function paste(entry) {
+-        if (root.cliphistBinary.includes("cliphist")) // Classic cliphist
+-            Quickshell.execDetached(["bash", "-c", `printf '${StringUtils.shellSingleQuoteEscape(entry)}' | ${root.cliphistBinary} decode | wl-copy && wl-paste`]);
+-        else { // Stash
+-            const entryNumber = entry.split("\t")[0];
+-            Quickshell.execDetached(["bash", "-c", `${root.cliphistBinary} decode ${entryNumber} | wl-copy; ${root.pressPasteCommand}`]);
+-        }
++        const pasteCommand = root.cliphistBinary.includes("cliphist") ? "wl-paste" : root.pressPasteCommand;
++        Quickshell.execDetached(["bash", "-c", `${root.copyCommand(entry)} && ${pasteCommand}`]);
+     }
+ 
+     function superpaste(count, isImage = false) {
+@@ -158,7 +157,7 @@
+             if (!isImage) return true;
+             return entryIsImage(entry);
+         }).slice(0, count)
+-        const pasteCommands = [...targetEntries].reverse().map(entry => `printf '${StringUtils.shellSingleQuoteEscape(entry)}' | ${root.cliphistBinary} decode | wl-copy && sleep ${root.pasteDelay} && ${root.pressPasteCommand}`)
++        const pasteCommands = [...targetEntries].reverse().map(entry => `${root.copyCommand(entry)} && sleep ${root.pasteDelay} && ${root.pressPasteCommand}`)
+         // Act
+         Quickshell.execDetached(["bash", "-c", pasteCommands.join(` && sleep ${root.pasteDelay} && `)]);
+     }

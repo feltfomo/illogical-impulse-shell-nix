@@ -11,6 +11,7 @@
   ddcutil,
   end4PcSource,
   end4PcTheme,
+  file,
   findutils,
   gawk,
   gnugrep,
@@ -54,6 +55,7 @@ let
     coreutils
     curl
     ddcutil
+    file
     findutils
     gawk
     gnugrep
